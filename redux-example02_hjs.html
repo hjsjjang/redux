@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Redux basic example</title>
+    <script src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
+    <script
+  src="https://code.jquery.com/jquery-1.12.4.min.js"
+  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+  crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div id="wrapper">
+      <!-- <select id="opt"></select> -->
+      <!-- <select id="opt1"></select> -->
+    </div>
+    <script>
+      var data = '';
+      var value = 0;
+      var depth = 0;
+      var depthArr = [];
+
+
+      function reducer(state, action) {
+        if (typeof state === 'undefined') {
+          state = { depth1: [
+            { value: 0, text: '선택해주세요' },
+            { value: 1, depth: 1, text: 'item1', subs: [{ value: 0, depth: 2, text: 'item1-1' },
+                                                        { value: 1, depth: 2, text: 'item1-2', subs: [{ value: 0, depth: 3, text: 'item1-3' }]
+                                                 }]
+            },
+            { value: 2, depth: 1, text: 'item2' },
+          ]};
+
+          return state;
+        }
+
+        switch (action.type) {
+          case 'CHANGE':
+            //return Object.assign({}, state, { depth2: [{ value: 0, text: 'item1-1' },{ value: 0, text: 'item1-2' },] });;
+            var returnState = dataReplace(state);
+
+            return Object.assign({}, state, { subs: returnState });
+        }
+
+      };
+
+      var store = Redux.createStore(reducer);
+
+      function arrReplace(n, dep) {
+        depthArr[dep] = n;
+
+        if (dep < depthArr.length) {
+          $('#wrapper select').each(function(i) {
+            if(i != dep && i > dep) {
+              console.log('i : ' + i)
+              depthArr.splice(i, 1);
+              $(this).remove();
+            }
+          });
+        }
+      };
+
+      function dataReplace(arr) {
+        // console.log("data : " + depth, value, store.getState())
+        if (depth == 0) {
+          if (arr.depth1[value].subs && arr.depth1[value].subs.length) {
+            data = arr.depth1[value].subs;
+          } else {
+            data = null;
+          }
+        } else {
+          if (data[value].subs && data[value].subs.length) {
+            data = data[value].subs;
+          } else {
+            data = null;
+          }
+        }
+
+        return data;
+      };
+
+      function makeSelect(arr) {
+        if (arr == null) {
+          return;
+        };
+
+        const $sbox = $('<select/>');
+
+        arr.map(function (item) {
+          $sbox.append($('<option/>', { value: item.value, html: item.text }));
+        });
+        $sbox.on('change', function (e) {
+          depth = $(this).index();
+          value = $(this).val();
+
+          arrReplace(value, depth);
+
+          store.dispatch({ type: 'CHANGE' });
+        });
+        $('#wrapper').append($sbox);
+      };
+
+      function initRender() {
+        makeSelect(store.getState().depth1);
+      };
+
+      function render() {
+        // console.log('render')
+        makeSelect(store.getState().subs);
+      };
+
+      store.subscribe(render);
+
+      initRender();
+    </script>
+  </body>
+</html>
